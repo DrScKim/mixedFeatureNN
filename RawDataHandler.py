@@ -5,7 +5,16 @@ import pandas as pd
 import numpy as np
 from enum import Enum
 
-logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.preprocessing import Normalizer
+from sklearn.neighbors import NearestNeighbors
+
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 query = 0
 id = 1
@@ -17,7 +26,7 @@ category = 6
 brand = 7
 title = 8
 
-
+ID_COLUMN_NAMES = 999
 NUMERIC_COLUMN_NAMES = 1000
 CATEGORICAL_COLUMN_NAMES = 1001
 TEXTUAL_COLUMN_NAMES = 10002
@@ -51,6 +60,7 @@ def readData(path):
     with open(path, 'r') as rfp:
         raw_data = dict()
         raw_data[Q] = dict()
+        raw_data[ID_COLUMN_NAMES] = [Column.id]
         raw_data[NUMERIC_COLUMN_NAMES] = [Column.query_item_rank, Column.price,
                                          Column.impressionCount, Column.clickCount,]
         raw_data[CATEGORICAL_COLUMN_NAMES] = [Column.category, Column.brand,]
@@ -76,6 +86,7 @@ def readData(path):
     return raw_data
 
 def imputeNumericData(npMat):
+    pass
 
 def genNumericMatrix(raw_data, query):
     n_rows = len(raw_data[Q][query][ITEM].keys())
@@ -91,7 +102,7 @@ def genNumericMatrix(raw_data, query):
     raw_data[Q][query][NUMERIC_MATRIX] = l
     raw_data[Q][query][MATRIX_ID_TABLE] = item_id_list
     df = pd.DataFrame(raw_data[Q][query][NUMERIC_MATRIX])
-    return
+    return df
 
 def genCateMatrix(raw_data, query):
 
@@ -135,25 +146,123 @@ def genTitleMatrix(raw_data, query):
 
 
 
+def __featureMixer(numFeatDim, cateFeatDim, txtFeatDim):
+    categorical_transformer = Pipeline(
+        steps=[
+            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+            ('onehot', OneHotEncoder(handle_unknown='ignore')),
+        ]
+    )
+
+    numerical_transformer = Pipeline(
+        steps=[
+            ('imputer', SimpleImputer(strategy='constant', fill_value=0)),
+            ('scaler', StandardScaler())
+        ]
+    )
+    # query,  id, query_item_rank,    price,  impressionCount,    clickCount, category,   brand,  title
+
+    num_feat_idx = [x for x in range(1,1+numFeatDim)]
+    cate_feat_idx = [x for x in range(1+numFeatDim, 1+numFeatDim+cateFeatDim)]
+    txt_feat_idx = [x for x in range(1+numFeatDim+cateFeatDim, 1+numFeatDim+cateFeatDim+txtFeatDim)]
+
+    mixedFeature = ColumnTransformer(
+        transformers=[
+            ('numFeat', numerical_transformer, num_feat_idx),
+            ('cateFeat', categorical_transformer, cate_feat_idx),
+            ('txtFeat', 'passthrough', txt_feat_idx)
+        ],
+        remainder='drop',
+        transformer_weights={
+            'numFeat': 1.0,
+            'cateFeat': 10.0,
+            'txtFeat': 100.0,
+        }
+    )
+    return mixedFeature
+
+
+
 def mixingFeaturePipeline(raw_data):
     from sklearn.pipeline import Pipeline
     outputs = list()
     i = 0
-
+    NNeighbour = 5 + 1
+    candidateResult = dict()
     for query in raw_data[Q]:
-        logging.WARN("{}): classified")
+        logging.info("{}) classified".format(query))
         #raw_dt[Q][query][CATE_MATRIX] = np.zeros(shape=raw_)
         numFeat = genNumericMatrix(raw_data, query)
         cateFeat = genCateMatrix(raw_data, query)
+        txtFeat = genTitleMatrix(raw_data, query)
+        id_list = pd.DataFrame(raw_data[Q][query][MATRIX_ID_TABLE])
 
+        numFeatDim = numFeat.shape[1]
+        cateFeatDim = cateFeat.shape[1]
+        txtFeatDim = txtFeat.shape[1]
 
+        feature = pd.concat([id_list, numFeat, cateFeat, txtFeat], axis=1, keys=['id','num','cate','text'])
+        n_sample = min(feature.shape[0], NNeighbour)
+        mixedFeature = __featureMixer(numFeatDim, cateFeatDim, txtFeatDim)
+        clf = Pipeline(
+            steps=[
+                ('featureMixing', mixedFeature),
+                ('clustering', NearestNeighbors(n_neighbors=n_sample, ))
+            ]
+        )
+        result = clf.fit(feature)
 
+        NN = result.named_steps['clustering']
 
+        recommend(raw_data, query, NN.kneighbors(mixedFeature.fit_transform(feature)), feature, candidateResult, True)
+    trace(raw_data, candidateResult)
+    return candidateResult
 
+def recommend(raw_data, query, NN, feature, candidate, isLogging=False):
+    neighbour_list = NN[1]
+    data = raw_data[Q][query]
+    candidate[query] = dict()
+    for feat in neighbour_list:
+        o_id = feature.iloc[feat[0]]['id'].values[0]
+        origin_rank = data[ITEM][o_id][Column.query_item_rank]
+        if origin_rank > 10:
+            continue
+        original_price = data[ITEM][o_id][Column.price]
 
-def recommend():
-    pass
+        candidate[query][o_id] = list()
+        for neighbour in feat[1:]:
+            c_id = feature.iloc[neighbour]['id'].values[0]
+            candidate[query][o_id].append(c_id)
+
+def trace(raw_data, candidates):
+    for query in candidates:
+        traceInfo = "query: {} \n".format(query)
+        traceInfo += "=====================================================================================\n"
+        for o_id in candidates[query]:
+            traceInfo += "{:>12})[{:>20}:{:>8}]{:>7}:{:>35}\t{}\n".format (
+                "original",
+                raw_data[Q][query][ITEM][o_id][Column.category],
+                raw_data[Q][query][ITEM][o_id][Column.brand],
+                raw_data[Q][query][ITEM][o_id][Column.query_item_rank],
+                raw_data[Q][query][ITEM][o_id][Column.title],
+                raw_data[Q][query][ITEM][o_id][Column.price]
+            )
+            traceInfo += "=====================================================================================\n"
+            for c_id in candidates[query][o_id]:
+                traceInfo += "{:>12})[{:>20}:{:>8}]{:>7}:{:>35}\t{}\n".format(
+                    "recommended",
+                    raw_data[Q][query][ITEM][c_id][Column.category],
+                    raw_data[Q][query][ITEM][c_id][Column.brand],
+                    raw_data[Q][query][ITEM][c_id][Column.query_item_rank],
+                    raw_data[Q][query][ITEM][c_id][Column.title],
+                    raw_data[Q][query][ITEM][c_id][Column.price]
+                )
+            traceInfo += "=====================================================================================\n"
+        logging.info(traceInfo)
+
 
 if __name__ == "__main__":
     path = "./rawData.csv"
-    readData(path)
+    raw_data = readData(path)
+    candidates = mixingFeaturePipeline(raw_data)
+    trace(raw_data, candidates)
