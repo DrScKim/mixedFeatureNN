@@ -137,7 +137,7 @@ def genTitleMatrix(raw_data, query):
     X = vectorizer.fit(corpus)
 
     titleList = list()
-    raw_data[Q][query][COUNT_VECTORIZE_FEATURE] = [0] * len(ra w_data[Q][query][ITEM])
+    raw_data[Q][query][COUNT_VECTORIZE_FEATURE] = [0] * len(raw_data[Q][query][ITEM])
     for id in raw_data[Q][query][ITEM]:
         titleList.append(tokenNormalizer(raw_data[Q][query][ITEM][id][Column.title]))
     raw_data[Q][query][COUNT_VECTORIZE_FEATURE] = X.transform(titleList)
@@ -242,26 +242,23 @@ def trace(raw_data, candidates):
         )
         traceInfo += "=====================================================================================\n"
         for o_id in candidates[query]:
-            traceInfo += "{:>12})[{:>20}:{:>8}]\t{:>7}:{:>35}\t{}\n".format (
-                "original",
-                raw_data[Q][query][ITEM][o_id][Column.category],
-                raw_data[Q][query][ITEM][o_id][Column.brand],
-                raw_data[Q][query][ITEM][o_id][Column.query_item_rank],
-                raw_data[Q][query][ITEM][o_id][Column.title],
-                raw_data[Q][query][ITEM][o_id][Column.price]
-            )
+            traceInfo += __traceInfo("recommended", raw_data, query, o_id)
             traceInfo += "=====================================================================================\n"
             for c_id in candidates[query][o_id]:
-                traceInfo += "{:>12})[{:>20}:{:>8}]\t{:>7}:{:>35}\t{}\n".format(
-                    "recommended",
-                    raw_data[Q][query][ITEM][c_id][Column.category],
-                    raw_data[Q][query][ITEM][c_id][Column.brand],
-                    raw_data[Q][query][ITEM][c_id][Column.query_item_rank],
-                    raw_data[Q][query][ITEM][c_id][Column.title],
-                    raw_data[Q][query][ITEM][c_id][Column.price]
-                )
+
+                traceInfo += __traceInfo("recommended", raw_data, query, c_id)
             traceInfo += "=====================================================================================\n"
         logging.info(traceInfo)
+
+def __traceInfo(mainInfo, raw_data, query, id):
+    return "{:>12})[{:>20}:{:>8}]\t{:>7}:{:>35}\t{}\n".format(
+                    mainInfo,
+                    raw_data[Q][query][ITEM][id][Column.category],
+                    raw_data[Q][query][ITEM][id][Column.brand],
+                    raw_data[Q][query][ITEM][id][Column.query_item_rank],
+                    raw_data[Q][query][ITEM][id][Column.title],
+                    raw_data[Q][query][ITEM][id][Column.price]
+                )
 
 
 if __name__ == "__main__":
