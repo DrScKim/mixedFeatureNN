@@ -6,7 +6,7 @@
 *.ini
 *.json
 *.key
-util/*.ini
+util/ㅎ*.ini
 MLVS/*
 
 # User-specific stuff
