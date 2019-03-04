@@ -7,6 +7,7 @@
 *.json
 *.key
 util/*.ini
+MLVS/*
 
 # User-specific stuff
 .idea/**/workspace.xml
