@@ -242,7 +242,7 @@ def trace(raw_data, candidates):
         )
         traceInfo += "=====================================================================================\n"
         for o_id in candidates[query]:
-            traceInfo += __traceInfo("recommended", raw_data, query, o_id)
+            traceInfo += __traceInfo("Original", raw_data, query, o_id)
             traceInfo += "=====================================================================================\n"
             for c_id in candidates[query][o_id]:
 
