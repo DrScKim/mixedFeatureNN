@@ -146,7 +146,7 @@ def genTitleMatrix(raw_data, query):
 
 
 
-def __featureMixer(numFeatDim, cateFeatDim, txtFeatDim):
+def __featureMixer(numFeatDim, cateFeatDim, txtFeatDim, num_feat_idx=None, cate_feat_idx=None, txt_feat_idx=None):
     categorical_transformer = Pipeline(
         steps=[
             ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
@@ -162,9 +162,12 @@ def __featureMixer(numFeatDim, cateFeatDim, txtFeatDim):
     )
     # query,  id, query_item_rank,    price,  impressionCount,    clickCount, category,   brand,  title
 
-    num_feat_idx = [x for x in range(1,1+numFeatDim)]
-    cate_feat_idx = [x for x in range(1+numFeatDim, 1+numFeatDim+cateFeatDim)]
-    txt_feat_idx = [x for x in range(1+numFeatDim+cateFeatDim, 1+numFeatDim+cateFeatDim+txtFeatDim)]
+    if num_feat_idx == None:
+        num_feat_idx = [x for x in range(1,1+numFeatDim)]
+    if cate_feat_idx == None:
+        cate_feat_idx = [x for x in range(1+numFeatDim, 1+numFeatDim+cateFeatDim)]
+    if txt_feat_idx == None:
+        txt_feat_idx = [x for x in range(1+numFeatDim+cateFeatDim, 1+numFeatDim+cateFeatDim+txtFeatDim)]
 
     mixedFeature = ColumnTransformer(
         transformers=[
