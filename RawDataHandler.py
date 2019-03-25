@@ -16,27 +16,22 @@ from sklearn.neighbors import NearestNeighbors
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-query = 0
-id = 1
-query_item_rank = 2
-price = 3
-impressionCount = 4
-clickCount = 5
-category = 6
-brand = 7
-title = 8
 
-ID_COLUMN_NAMES = 999
-NUMERIC_COLUMN_NAMES = 1000
-CATEGORICAL_COLUMN_NAMES = 1001
-TEXTUAL_COLUMN_NAMES = 10002
-CATE_MATRIX = 10003
-MATRIX_ID_TABLE = 10004
-COUNT_VECTORIZE_FEATURE = 10005
-NUMERIC_MATRIX = 10006
+import configparser
 
-Q = 101
-ITEM = 102
+config = configparser.ConfigParser()
+config.read('configure.ini')
+
+ID_COLUMN_NAMES = int(config['DICT_ID']['ID_COLUMN_NAMES'])
+NUMERIC_COLUMN_NAMES = int(config['DICT_ID']['NUMERIC_COLUMN_NAMES'])
+CATEGORICAL_COLUMN_NAMES = int(config['DICT_ID']['CATEGORICAL_COLUMN_NAMES'])
+TEXTUAL_COLUMN_NAMES = int(config['DICT_ID']['TEXTUAL_COLUMN_NAMES'])
+CATE_MATRIX = int(config['DICT_ID']['CATE_MATRIX'])
+MATRIX_ID_TABLE = int(config['DICT_ID']['MATRIX_ID_TABLE'])
+COUNT_VECTORIZE_FEATURE = int(config['DICT_ID']['COUNT_VECTORIZE_FEATURE'])
+NUMERIC_MATRIX = int(config['DICT_ID']['NUMERIC_MATRIX'])
+Q = int(config['DICT_ID']['Q'])
+ITEM = int(config['DICT_ID']['ITEM'])
 
 class Column(Enum):
     query = 0
@@ -50,12 +45,9 @@ class Column(Enum):
     title = 8
 '''
 data scheme
-query,  id, query_item_rank,    price,  impressionCount,    clickCount, category,   brand,  title
+query,  id, query_item_rank, price, impressionCount, clickCount, category,   brand,  title
 nike, 1, 1, 100, 1000,
-
 '''
-
-
 def readData(path):
     with open(path, 'r') as rfp:
         raw_data = dict()
@@ -70,7 +62,6 @@ def readData(path):
         for row in rcsv:
             query = row[Column.query.value]
             id = int(row[Column.id.value])
-
             if query not in raw_data[Q]:
                 raw_data[Q][query] = dict()
                 raw_data[Q][query][ITEM] = dict()
@@ -82,11 +73,7 @@ def readData(path):
                 raw_data[Q][query][ITEM][id][col] = row[col.value]
             for col in raw_data[TEXTUAL_COLUMN_NAMES]:
                 raw_data[Q][query][ITEM][id][col] = row[col.value]
-
     return raw_data
-
-def imputeNumericData(npMat):
-    pass
 
 def genNumericMatrix(raw_data, query):
     n_rows = len(raw_data[Q][query][ITEM].keys())
@@ -186,15 +173,13 @@ def __featureMixer(numFeatDim, cateFeatDim, txtFeatDim, num_feat_idx=None, cate_
 
 
 
-def mixingFeaturePipeline(raw_data):
+def mixingFeaturePipeline(raw_data, K=5):
     from sklearn.pipeline import Pipeline
-    outputs = list()
-    i = 0
-    NNeighbour = 5 + 1
+
+    NNeighbour = K + 1 # for Scikit-learn's NN package need input param as K+1 to find K-nearest neighbours
     candidateResult = dict()
     for query in raw_data[Q]:
         logging.info("{}) classified".format(query))
-        #raw_dt[Q][query][CATE_MATRIX] = np.zeros(shape=raw_)
         numFeat = genNumericMatrix(raw_data, query)
         cateFeat = genCateMatrix(raw_data, query)
         txtFeat = genTitleMatrix(raw_data, query)
@@ -263,9 +248,39 @@ def __traceInfo(mainInfo, raw_data, query, id):
                     raw_data[Q][query][ITEM][id][Column.price]
                 )
 
+def save(outputPath, raw_data, candidates):
+    import pandas as pd
+    column = ['Query','OriginalCategory', 'OriginalBrand', 'OriginalRank', 'OriginalTitle','OriginalPrice', 'CandidateCategory', 'CandidateBrand', 'CandidateRank', 'CandidateTitle', 'CandidatePrice']
+    df = pd.DataFrame(columns=column)
+    print(df.head())
+
+    for query in candidates:
+        for o_id in candidates[query]:
+            for c_id in candidates[query][o_id]:
+                d = dict({
+                    column[0] : query,
+                    column[1] : raw_data[Q][query][ITEM][o_id][Column.category],
+                    column[2] : raw_data[Q][query][ITEM][o_id][Column.brand],
+                    column[3] : raw_data[Q][query][ITEM][o_id][Column.query_item_rank],
+                    column[4] : raw_data[Q][query][ITEM][o_id][Column.title],
+                    column[5] : raw_data[Q][query][ITEM][o_id][Column.price],
+                    column[6] : raw_data[Q][query][ITEM][c_id][Column.category],
+                    column[7] : raw_data[Q][query][ITEM][c_id][Column.brand],
+                    column[8] : raw_data[Q][query][ITEM][c_id][Column.query_item_rank],
+                    column[9] : raw_data[Q][query][ITEM][c_id][Column.title],
+                    column[10] : raw_data[Q][query][ITEM][c_id][Column.price]
+                })
+
+                df = df.append(d, ignore_index=True)
+                    #df.append(row, axis = 1)
+    df.to_csv(outputPath)
+    print(df.head())
+
+
 
 if __name__ == "__main__":
     path = "./rawData.csv"
     raw_data = readData(path)
     candidates = mixingFeaturePipeline(raw_data)
     trace(raw_data, candidates)
+    save("./output.csv",raw_data,candidates)
