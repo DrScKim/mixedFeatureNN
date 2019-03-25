@@ -166,8 +166,8 @@ def __featureMixer(numFeatDim, cateFeatDim, txtFeatDim, num_feat_idx=None, cate_
         num_feat_idx = [x for x in range(1,1+numFeatDim)]
     if cate_feat_idx == None:
         cate_feat_idx = [x for x in range(1+numFeatDim, 1+numFeatDim+cateFeatDim)]
-    if txt_feat_idx == None:
-        txt_feat_idx = [x for x in range(1+numFeatDim+cateFeatDim, 1+numFeatDim+cateFeatDim+txtFeatDim)]
+
+    txt_feat_idx = [x for x in range(1+numFeatDim+cateFeatDim, 1+numFeatDim+cateFeatDim+txtFeatDim)]
 
     mixedFeature = ColumnTransformer(
         transformers=[

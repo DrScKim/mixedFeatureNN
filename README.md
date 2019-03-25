@@ -42,30 +42,27 @@ RawDataHandler.py
 
 function
 * genNumericMatrix:
-```python
-
-def genNumericMatrix(raw_data, query):
-    n_rows = len(raw_data[Q][query][ITEM].keys())
-    n_cols = len(raw_data[NUMERIC_COLUMN_NAMES])
-    l = np.ndarray(shape=(n_rows, n_cols))
-    item_id_list = list()
-    row = 0
-    for id in raw_data[Q][query][ITEM]:
-        item_id_list.append(id)
-        data = [raw_data[Q][query][ITEM][id][x] for x in raw_data[NUMERIC_COLUMN_NAMES]]
-        l[row] = np.array(data)
-        row += 1
-    raw_data[Q][query][NUMERIC_MATRIX] = l
-    raw_data[Q][query][MATRIX_ID_TABLE] = item_id_list
-    df = pd.DataFrame(raw_data[Q][query][NUMERIC_MATRIX])
-    return df
-```
+convert raw data of numeric features to data frame format
 * genCateMatrix:
-
+convert raw data of categorical features to data frame format
 * genTitleMatrix: query indexed document
-
+convert raw data of title data( textual data ) to data frame format
 * __featureMixer:
+Mix all features by using Pipeline and ColumnTransformer in Scikit-learn
+if you want to use some features, you can select index of those feature you want to select
+this logic only use selected feature containing in "xxx_feat_idx"
+```python
+def __featureMixer(numFeatDim, cateFeatDim, txtFeatDim, num_feat_idx=None, cate_feat_idx=None, txt_feat_idx=None)
+```
 
+    * numFeatDim:
+    * cateFeatDim:
+    * txtFeatDim:
+    * num_feat_idx:
+    * cate_feat_idx:
+    * txt_feat_idx:
+    
+  
 * mixingFeaturePipeline:
 
 * recommend:
