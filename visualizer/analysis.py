@@ -1,3 +1,4 @@
+from visualizer.plotlyInit import *
 
 import pandas as pd
 pd.options.display.float_format = '{:.4f}'.format
@@ -50,9 +51,8 @@ fig = {
         'yaxis': {'title': "Life Expectancy"}
     }
 }
-
-import plotly.plotly as py
-url = py.plot(fig, filename='pandas/multiple-scatter')
+print(BASE_DIR)
+plot(fig, filename=BASE_DIR+'test.html')
 # IPython notebook
 # py.iplot(fig, filename='pandas/multiple-scatter')
 
