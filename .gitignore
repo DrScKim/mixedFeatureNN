@@ -5,7 +5,8 @@
 
 
 
-*.ini
+configure.ini
+
 *.json
 *.key
 util/ㅎ*.ini
