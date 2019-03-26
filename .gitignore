@@ -4,7 +4,7 @@
 # secret file
 
 
-
+visualizer/seckey.ini
 configure.ini
 
 *.json
