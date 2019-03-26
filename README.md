@@ -41,6 +41,16 @@ pip install -r requirements.txt
 ```
 
 ## Visualization Example
+1) In order to use plotly, you first get apikey on 
+https://plot.ly/settings/api#/
+2) and then rename file "./visualizer/seckey_tmp.ini" to "./visualizer/seckey.ini"
+3) overwrite your username and apikey on the seckey.ini file
+```python
+[PLOTLY]
+plotly_username='username'
+plotly_apikey='apikey'
+```
+
 ```./visualizer/output/test.hmtl```
 ![scatter](./image/price_scatter.png)
 above image shows the price of candidate items.
