@@ -3,7 +3,7 @@
 
 # secret file
 
-visualizer/*.ini
+
 
 *.ini
 *.json

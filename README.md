@@ -40,6 +40,12 @@ you can use requirements file as below
 pip install -r requirements.txt
 ```
 
+## Visualization Example
+```./visualizer/output/test.hmtl```
+![scatter](./image/price_scatter.png)
+above image shows the price of candidate items.
+when you run ./visualizer/analysis.py, you can get a HTML to analyze price distribution.
+
 ## Description of functions
 
 RawDataHandler.py
