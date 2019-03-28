@@ -4,7 +4,7 @@ import pandas as pd
 pd.options.display.float_format = '{:.4f}'.format
 
 
-targetQuery = ['기저귀','분유']
+targetQuery = ['냉장고'] #if you want to check another queries, you reset the list.
 
 df = pd.read_csv('./output.csv')
 
